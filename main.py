@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_community.tools import DuckDuckGoSearchRun
+from geopy.geocoders import Nominatim # Library baru untuk Map
 from dotenv import load_dotenv
 import requests
 import os
@@ -15,7 +16,6 @@ load_dotenv()
 
 app = FastAPI(title="Free AI Assistant API")
 
-# Setup CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,8 +23,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
- 
-# wheater tools
+
+# Weather Tools
 def get_weather(city: str) -> str:
     """Cek cuaca saat ini berdasarkan nama kota."""
     api_key = os.getenv("OPENWEATHER_API_KEY")
@@ -42,9 +42,8 @@ def get_weather(city: str) -> str:
     except Exception as e:
         return f"Error Cuaca: {str(e)}"
 
-# ddg tools
+# DuckDuckGo Tools
 ddg_search = DuckDuckGoSearchRun()
-
 def internet_search(query: str) -> str:
     """Mencari informasi, tempat, berita, atau fakta di internet."""
     print(f"🌍 Searching DuckDuckGo: {query}")
@@ -53,10 +52,27 @@ def internet_search(query: str) -> str:
     except Exception as e:
         return f"Error Search: {str(e)}"
 
+# Map Tools
+geolocator = Nominatim(user_agent="my_ai_nexus_app")
+
+def get_coordinates(location: str) -> str:
+    """Mendapatkan koordinat peta (latitude/longitude) dari nama tempat/kota."""
+    print(f"📍 Mencari Koordinat: {location}")
+    try:
+        loc = geolocator.geocode(location)
+        if loc:
+            return (f"Koordinat {location} ditemukan: Lat {loc.latitude}, Lon {loc.longitude}. "
+                    f"INSTRUKSI PENTING: Di akhir jawabanmu, WAJIB sertakan tag ini persis: "
+                    f"[MAP:{loc.latitude},{loc.longitude},{location}]")
+        return "Lokasi tidak ditemukan di peta."
+    except Exception as e:
+        return f"Error Map: {str(e)}"
+
 # Mapping Tools
 tools_map = {
     'get_weather': get_weather,
-    'internet_search': internet_search
+    'internet_search': internet_search,
+    'get_coordinates': get_coordinates # Daftarkan tool baru
 }
 
 # Inisialisasi Gemini
@@ -66,7 +82,8 @@ llm = ChatGoogleGenerativeAI(
     google_api_key=os.getenv("GOOGLE_API_KEY")
 )
 
-llm_with_tools = llm.bind_tools([get_weather, internet_search])
+# Bind 3 Tools
+llm_with_tools = llm.bind_tools([get_weather, internet_search, get_coordinates])
 
 class ChatRequest(BaseModel):
     message: str
@@ -75,11 +92,8 @@ class ChatResponse(BaseModel):
     reply: str
 
 def parse_gemini_content(content) -> str:
-    """Mengubah format aneh Gemini (List/Dict) menjadi String biasa."""
-    if isinstance(content, str):
-        return content
+    if isinstance(content, str): return content
     elif isinstance(content, list):
-        # Jika formatnya [{'text': 'halo...'}]
         text_parts = []
         for block in content:
             if isinstance(block, dict) and 'text' in block:
@@ -87,8 +101,7 @@ def parse_gemini_content(content) -> str:
             elif isinstance(block, str):
                 text_parts.append(block)
         return " ".join(text_parts)
-    else:
-        return str(content)
+    else: return str(content)
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
@@ -98,7 +111,6 @@ async def chat_endpoint(request: ChatRequest):
         
         for i in range(max_turns):
             print(f"🔄 Turn ke-{i+1}...")
-            
             ai_msg = llm_with_tools.invoke(messages)
             
             if ai_msg.tool_calls:
@@ -116,9 +128,12 @@ async def chat_endpoint(request: ChatRequest):
                         try:
                             if tool_name == 'get_weather':
                                 output = func(**tool_args)
+                            elif tool_name == 'get_coordinates': 
+                                val = list(tool_args.values())[0] if tool_args else ""
+                                output = func(val)
                             else:
-                                query_val = list(tool_args.values())[0] if tool_args else ""
-                                output = func(query_val)
+                                val = list(tool_args.values())[0] if tool_args else ""
+                                output = func(val)
                         except Exception as e:
                             output = f"Error Tool: {str(e)}"
                     
@@ -129,14 +144,12 @@ async def chat_endpoint(request: ChatRequest):
                         content=str(output),
                         name=tool_name
                     ))
-                
             else:
                 final_text = parse_gemini_content(ai_msg.content)
-                
                 print("✅ Jawaban Final Ditemukan.")
                 return ChatResponse(reply=final_text)
         
-        return ChatResponse(reply="Maaf, proses pencarian terlalu rumit.")
+        return ChatResponse(reply="Maaf, proses terlalu rumit.")
 
     except Exception as e:
         print(f"❌ Error System: {e}")

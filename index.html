@@ -4,40 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Nexus</title>
-     
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                    },
-                    colors: {
-                        dark: '#0B0C15',
-                        glass: 'rgba(255, 255, 255, 0.05)',
-                        glassBorder: 'rgba(255, 255, 255, 0.1)',
-                    },
-                    animation: {
-                        'blob': 'blob 7s infinite',
-                        'fade-up': 'fadeUp 0.5s ease-out forwards',
-                    },
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: { dark: '#0B0C15', glass: 'rgba(255, 255, 255, 0.05)', glassBorder: 'rgba(255, 255, 255, 0.1)' },
+                    animation: { 'blob': 'blob 7s infinite', 'fade-up': 'fadeUp 0.5s ease-out forwards' },
                     keyframes: {
                         blob: {
                             '0%': { transform: 'translate(0px, 0px) scale(1)' },
                             '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
                             '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' }
                         },
                         fadeUp: {
                             '0%': { opacity: '0', transform: 'translateY(10px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
                         }
                     }
                 }
@@ -46,22 +40,29 @@
     </script>
 
     <style>
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
-
-        /* Typing Animation */
         .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
         
-        /* Markdown Overrides */
-        .prose strong { color: #a5b4fc; } /* Indigo-300 */
+        .prose strong { color: #a5b4fc; }
         .prose a { color: #38bdf8; text-decoration: none; border-bottom: 1px dotted #38bdf8; }
         .prose ul { list-style-type: disc; padding-left: 1.2em; }
+
+        /* Style Khusus Map */
+        .map-container {
+            height: 250px; 
+            width: 100%; 
+            border-radius: 12px; 
+            margin-top: 10px; 
+            z-index: 1; /* Agar di atas background */
+            position: relative;
+        }
+        .leaflet-popup-content-wrapper { background: #1e1b4b; color: white; border-radius: 8px; }
+        .leaflet-popup-tip { background: #1e1b4b; }
     </style>
 </head>
 <body class="bg-dark text-gray-200 h-screen flex flex-col overflow-hidden relative selection:bg-indigo-500 selection:text-white">
@@ -77,24 +78,21 @@
             <div class="flex items-center gap-3">
                 <div class="relative">
                     <div class="absolute inset-0 bg-indigo-500 blur opacity-50 rounded-full"></div>
-                    <div class="relative w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-xl shadow-xl border border-white/10">
-                        ✨
-                    </div>
+                    <div class="relative w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-xl shadow-xl border border-white/10">✨</div>
                 </div>
                 <div>
                     <h1 class="font-bold text-lg text-white tracking-wide">Nexus AI</h1>
                     <div class="flex items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Online • Gemini 2.5</p>
+                        <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Online • Maps Enabled</p>
                     </div>
                 </div>
             </div>
-            <a href="#" class="text-xs text-gray-500 hover:text-white transition-colors">v1.0.0</a>
+            <a href="#" class="text-xs text-gray-500 hover:text-white transition-colors">v2.0 Maps</a>
         </div>
     </header>
 
     <main id="chat-container" class="relative z-10 flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 max-w-4xl mx-auto w-full pb-32 scroll-smooth">
-        
         <div class="flex gap-4 animate-fade-up">
             <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white border border-white/10 shadow-lg">AI</div>
             <div class="space-y-1">
@@ -103,38 +101,24 @@
                     <span class="text-[10px] text-gray-500">Just now</span>
                 </div>
                 <div class="bg-glass backdrop-blur-md border border-glassBorder p-5 rounded-2xl rounded-tl-none text-gray-300 text-sm shadow-xl leading-relaxed">
-                    <p>Halo! Saya adalah asisten cerdas yang terhubung dengan:</p>
-                    <ul class="mt-2 space-y-1 list-disc list-inside text-gray-400">
-                        <li><strong class="text-indigo-400">DuckDuckGo</strong> (Pencarian Realtime)</li>
-                        <li><strong class="text-sky-400">OpenWeather</strong> (Data Cuaca)</li>
-                    </ul>
-                    <p class="mt-3">Coba tanya: <em>"Cari tempat ngopi di Jogja yang buka 24 jam, lalu cek cuacanya."</em></p>
+                    <p>Halo! Sekarang saya bisa menampilkan <strong>Peta Interaktif</strong>.</p>
+                    <p class="mt-2">Coba tanya: <em class="text-indigo-400">"Dimana lokasi Monas?"</em> atau <em class="text-indigo-400">"Tunjukkan peta Surabaya dan bagaimana cuacanya?"</em></p>
                 </div>
             </div>
         </div>
-
     </main>
 
     <footer class="fixed bottom-0 w-full z-20">
         <div class="absolute bottom-0 w-full h-32 bg-gradient-to-t from-dark to-transparent pointer-events-none"></div>
-        
         <div class="relative max-w-4xl mx-auto px-4 pb-6">
             <form id="chat-form" class="relative group">
                 <div class="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl opacity-30 group-hover:opacity-60 transition duration-500 blur"></div>
-                
                 <div class="relative flex bg-[#13141f] rounded-2xl border border-glassBorder shadow-2xl items-end p-2">
-                    <textarea id="user-input" rows="1"
-                        class="w-full bg-transparent text-white text-sm px-4 py-3 focus:outline-none placeholder-gray-500 resize-none overflow-hidden max-h-32"
-                        placeholder="Ketik pertanyaan kompleks Anda di sini..." required></textarea>
-                    
-                    <button type="submit" id="send-btn"
-                        class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl p-3 mb-0.5 mr-0.5 transition-all shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed group-focus-within:bg-indigo-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-                            <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
-                        </svg>
+                    <textarea id="user-input" rows="1" class="w-full bg-transparent text-white text-sm px-4 py-3 focus:outline-none placeholder-gray-500 resize-none overflow-hidden max-h-32" placeholder="Tanya lokasi atau info apapun..." required></textarea>
+                    <button type="submit" id="send-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl p-3 mb-0.5 mr-0.5 transition-all shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 group-focus-within:bg-indigo-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg>
                     </button>
                 </div>
-                <p class="text-center text-[10px] text-gray-600 mt-2">AI dapat membuat kesalahan. Harap verifikasi informasi penting.</p>
             </form>
         </div>
     </footer>
@@ -145,32 +129,69 @@
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
 
-        // Auto resize textarea
         userInput.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = (this.scrollHeight) + 'px';
+            this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';
             if(this.value === '') this.style.height = 'auto';
         });
 
-        // Submit on Enter (Shift+Enter for newline)
         userInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                chatForm.dispatchEvent(new Event('submit'));
-            }
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatForm.dispatchEvent(new Event('submit')); }
         });
+
+        // --- FUNGSI RENDER MAP ---
+        function renderMap(lat, lon, name, containerId) {
+            setTimeout(() => {
+                // Inisialisasi Map Leaflet
+                var map = L.map(containerId).setView([lat, lon], 13);
+                
+                // Tambahkan Tile OpenStreetMap
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+
+                // Tambahkan Marker
+                L.marker([lat, lon]).addTo(map)
+                    .bindPopup(`<b>${name}</b>`)
+                    .openPopup();
+            }, 500); // Delay sedikit agar element HTML siap
+        }
 
         function appendMessage(text, sender) {
             const isUser = sender === 'user';
             const div = document.createElement('div');
-            
-            // Animation class
             div.className = `flex gap-4 animate-fade-up ${isUser ? 'flex-row-reverse' : ''}`;
             
-            // Render Markdown
-            const content = isUser ? text.replace(/\n/g, '<br>') : marked.parse(text);
+            // LOGIKA PARSING MAP TAG [MAP:lat,lon,name]
+            let contentHtml = "";
+            let mapData = null;
 
-            // Conditional Styling for Bubbles
+            if (!isUser) {
+                // Regex untuk mencari tag MAP
+                const mapRegex = /\[MAP:(-?\d+\.\d+),(-?\d+\.\d+),([^\]]+)\]/g;
+                const match = mapRegex.exec(text);
+                
+                if (match) {
+                    const lat = match[1];
+                    const lon = match[2];
+                    const locName = match[3];
+                    const mapId = 'map-' + Date.now();
+                    
+                    // Simpan data map untuk dirender setelah HTML masuk DOM
+                    mapData = { lat, lon, name: locName, id: mapId };
+                    
+                    // Hapus tag MAP dari teks agar tidak tampil mentah
+                    text = text.replace(match[0], '');
+                    
+                    // Tambahkan wadah map
+                    contentHtml = marked.parse(text) + `<div id="${mapId}" class="map-container shadow-xl border border-white/20"></div>`;
+                } else {
+                    contentHtml = marked.parse(text);
+                }
+            } else {
+                contentHtml = `<p class="leading-relaxed">${text.replace(/\n/g, '<br>')}</p>`;
+            }
+
+            // Styling Avatar & Bubble (sama seperti sebelumnya)
             const avatar = isUser 
                 ? `<div class="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white border border-white/10 shadow-lg">YOU</div>`
                 : `<div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white border border-white/10 shadow-lg">AI</div>`;
@@ -179,23 +200,25 @@
                 ? `bg-gradient-to-br from-indigo-600 to-blue-700 text-white rounded-tr-none shadow-indigo-500/10`
                 : `bg-glass backdrop-blur-md border border-glassBorder text-gray-200 rounded-tl-none prose prose-invert prose-sm max-w-none shadow-xl`;
 
-            const name = isUser ? 'You' : 'Nexus AI';
-            const nameColor = isUser ? 'text-gray-400 text-right' : 'text-indigo-300';
-
             div.innerHTML = `
                 ${avatar}
-                <div class="space-y-1 max-w-[85%] sm:max-w-[75%]">
+                <div class="space-y-1 max-w-[85%] sm:max-w-[75%] w-full">
                     <div class="flex items-baseline gap-2 ${isUser ? 'justify-end' : ''}">
-                        <span class="text-xs font-bold ${nameColor}">${name}</span>
+                        <span class="text-xs font-bold ${isUser ? 'text-gray-400 text-right' : 'text-indigo-300'}">${isUser ? 'You' : 'Nexus AI'}</span>
                     </div>
                     <div class="p-4 sm:p-5 rounded-2xl ${bubbleStyle}">
-                        ${isUser ? `<p class="leading-relaxed">${content}</p>` : content}
+                        ${contentHtml}
                     </div>
                 </div>
             `;
             
             chatContainer.appendChild(div);
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+            // RENDER MAP JIKA ADA DATA
+            if (mapData) {
+                renderMap(mapData.lat, mapData.lon, mapData.name, mapData.id);
+            }
         }
 
         function showLoading() {
@@ -206,17 +229,11 @@
             div.innerHTML = `
                 <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white border border-white/10 shadow-lg animate-pulse">AI</div>
                 <div class="space-y-1">
-                     <div class="flex items-baseline gap-2">
-                        <span class="text-xs font-bold text-indigo-300">Nexus AI</span>
-                        <span class="text-[10px] text-gray-500">Thinking...</span>
-                    </div>
+                    <div class="flex items-baseline gap-2"><span class="text-xs font-bold text-indigo-300">Nexus AI</span><span class="text-[10px] text-gray-500">Thinking...</span></div>
                     <div class="bg-glass backdrop-blur-md border border-glassBorder p-4 rounded-2xl rounded-tl-none flex gap-2 items-center w-fit shadow-xl">
-                        <div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div>
-                        <div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div>
-                        <div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div>
+                        <div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div><div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div><div class="w-2 h-2 bg-indigo-400 rounded-full typing-dot"></div>
                     </div>
-                </div>
-            `;
+                </div>`;
             chatContainer.appendChild(div);
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
             return id;
@@ -226,42 +243,19 @@
             e.preventDefault();
             const message = userInput.value.trim();
             if (!message) return;
-
             appendMessage(message, 'user');
-            userInput.value = '';
-            userInput.style.height = 'auto'; // Reset height
-            sendBtn.disabled = true;
-
+            userInput.value = ''; userInput.style.height = 'auto'; sendBtn.disabled = true;
             const loadingId = showLoading();
-
             try {
-                // Fetch ke FastAPI
-                const response = await fetch('http://127.0.0.1:8000/chat', { // Ganti dengan URL Ngrok jika pakai HP
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
-                });
-
+                const response = await fetch('http://127.0.0.1:8000/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: message }) });
                 const data = await response.json();
-                
-                // Hapus loading
-                const loadingEl = document.getElementById(loadingId);
-                if(loadingEl) loadingEl.remove();
-                
-                if (response.ok) {
-                    appendMessage(data.reply, 'ai');
-                } else {
-                    appendMessage(`Error: ${data.detail || 'Terjadi kesalahan sistem'}`, 'ai');
-                }
+                document.getElementById(loadingId)?.remove();
+                if (response.ok) appendMessage(data.reply, 'ai');
+                else appendMessage(`Error: ${data.detail}`, 'ai');
             } catch (error) {
-                const loadingEl = document.getElementById(loadingId);
-                if(loadingEl) loadingEl.remove();
-                appendMessage("⚠️ Gagal terhubung ke server. Pastikan 'python main.py' berjalan.", 'ai');
-            } finally {
-                sendBtn.disabled = false;
-                // Focus kembali ke input di Desktop
-                if(window.innerWidth > 768) userInput.focus();
-            }
+                document.getElementById(loadingId)?.remove();
+                appendMessage("⚠️ Gagal terhubung ke server.", 'ai');
+            } finally { sendBtn.disabled = false; if(window.innerWidth > 768) userInput.focus(); }
         });
     </script>
 </body>
